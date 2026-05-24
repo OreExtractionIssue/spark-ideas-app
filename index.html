@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spark — App Idea Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0f;--bg2:#13131a;--bg3:#1c1c26;--card:#16161e;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0efe8;--muted:#8a8997;--accent:#c8f55a;--accent2:#9b6dff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+.noise{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");background-size:200px;opacity:0.4;}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;}
+.orb1{width:500px;height:500px;background:rgba(155,109,255,0.12);top:-150px;right:-100px;}
+.orb2{width:400px;height:400px;background:rgba(200,245,90,0.06);bottom:-100px;left:-100px;}
+#app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:40px 24px 80px;}
+header{display:flex;align-items:center;gap:12px;margin-bottom:64px;}
+.logo-mark{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:20px;height:20px;}
+.logo-text{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;letter-spacing:-0.5px;}
+.logo-text span{color:var(--accent);}
+.badge{margin-left:auto;font-size:11px;font-weight:500;color:var(--muted);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;letter-spacing:0.5px;text-transform:uppercase;}
+.screen{display:none;}.screen.active{display:block;}
+/* HOME */
+.hero{text-align:center;padding:20px 0 60px;animation:fadeUp 0.6s ease both;}
+.hero-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:500;margin-bottom:20px;}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(38px,6vw,68px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:20px;}
+.hero h1 em{font-style:normal;color:var(--accent);}
+.hero h1 span{color:var(--accent2);}
+.hero p{font-size:17px;color:var(--muted);max-width:440px;margin:0 auto 40px;line-height:1.7;}
+.btn-primary{background:var(--accent);color:#0b0b0f;border:none;border-radius:14px;padding:16px 36px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;box-shadow:0 0 40px rgba(200,245,90,0.25);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 50px rgba(200,245,90,0.35);}
+.btn-primary:active{transform:scale(0.98);}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:64px;}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;}
+.feature-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:18px;}
+.feature-card h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px;}
+.feature-card p{font-size:13px;color:var(--muted);line-height:1.6;}
+/* QUESTIONS */
+.q-screen{animation:fadeUp 0.4s ease both;}
+.progress-bar{height:3px;background:var(--bg3);border-radius:4px;margin-bottom:40px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1);}
+.q-step{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.q-question{font-family:'Syne',sans-serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;line-height:1.2;letter-spacing:-0.5px;margin-bottom:8px;}
+.q-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.options-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px;}
+.option-btn{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;text-align:left;transition:border-color 0.15s,background 0.15s,transform 0.1s;display:flex;align-items:center;gap:9px;}
+.option-btn:hover{border-color:var(--border2);background:var(--bg3);}
+.option-btn.selected{border-color:var(--accent);background:rgba(200,245,90,0.07);color:var(--accent);}
+.option-btn:active{transform:scale(0.97);}
+.option-emoji{font-size:17px;flex-shrink:0;}
+.option-label{font-weight:400;flex:1;line-height:1.3;font-size:13px;}
+.option-check{width:16px;height:16px;border-radius:4px;flex-shrink:0;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;transition:all 0.15s;margin-left:auto;}
+.option-btn.selected .option-check{background:var(--accent);border-color:var(--accent);color:#0b0b0f;font-weight:800;}
+.multi-hint{font-size:12px;color:var(--muted);margin-bottom:14px;grid-column:1/-1;}
+.multi-hint strong{color:var(--accent);}
+.other-input-wrap{margin-bottom:18px;display:none;}
+.other-input-wrap.visible{display:block;animation:fadeUp 0.2s ease both;}
+.other-label{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:500;}
+.other-input{width:100%;background:var(--card);border:1px solid rgba(200,245,90,0.4);border-radius:12px;padding:12px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.15s;}
+.other-input:focus{border-color:var(--accent);}
+.other-input::placeholder{color:var(--muted);}
+.free-text-area{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;resize:none;min-height:110px;outline:none;transition:border-color 0.15s;margin-bottom:18px;}
+.free-text-area:focus{border-color:rgba(200,245,90,0.5);}
+.free-text-area::placeholder{color:var(--muted);}
+.q-nav{display:flex;align-items:center;gap:12px;margin-top:4px;}
+.btn-next{background:var(--accent);color:#0b0b0f;border:none;border-radius:12px;padding:13px 30px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:transform 0.15s,opacity 0.15s;}
+.btn-next:hover{transform:translateY(-1px);}
+.btn-next:active{transform:scale(0.98);}
+.btn-next:disabled{opacity:0.4;cursor:default;transform:none;}
+.btn-back{background:transparent;border:1px solid var(--border2);border-radius:12px;padding:13px 22px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:15px;cursor:pointer;transition:color 0.15s,border-color 0.15s;}
+.btn-back:hover{color:var(--text);border-color:rgba(255,255,255,0.25);}
+.skip-link{margin-left:auto;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;transition:color 0.15s;}
+.skip-link:hover{color:var(--text);}
+/* LOADING */
+.loading-screen{text-align:center;padding:80px 0;animation:fadeUp 0.4s ease both;}
+.spark-loader{display:inline-flex;flex-direction:column;align-items:center;gap:24px;}
+.loader-ring{width:64px;height:64px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+.loader-dots{display:flex;gap:8px;}
+.loader-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease infinite;}
+.loader-dot:nth-child(2){animation-delay:0.2s;}
+.loader-dot:nth-child(3){animation-delay:0.4s;}
+.loader-text{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-top:16px;}
+.loader-sub{color:var(--muted);font-size:15px;margin-top:8px;}
+/* IDEAS */
+.ideas-screen{animation:fadeUp 0.5s ease both;}
+.ideas-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:32px;}
+.ideas-header h2{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,38px);font-weight:800;letter-spacing:-1px;line-height:1.1;}
+.ideas-header h2 span{color:var(--accent);}
+.ideas-header p{color:var(--muted);font-size:15px;margin-top:6px;}
+.btn-refresh{flex-shrink:0;background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:12px 18px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color 0.15s,background 0.15s,color 0.15s;}
+.btn-refresh:hover{border-color:var(--accent);background:rgba(200,245,90,0.05);color:var(--accent);}
+.btn-refresh svg{width:15px;height:15px;transition:transform 0.4s;}
+.btn-refresh:hover svg{transform:rotate(180deg);}
+.btn-refresh:disabled{opacity:0.5;cursor:default;}
+.ideas-list{display:flex;flex-direction:column;gap:12px;}
+.idea-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 22px;transition:border-color 0.2s,transform 0.15s,background 0.2s;animation:fadeUp 0.4s ease both;position:relative;overflow:hidden;}
+.idea-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,245,90,0.3),transparent);opacity:0;transition:opacity 0.2s;}
+.idea-card:hover{border-color:var(--border2);transform:translateY(-2px);background:var(--bg3);}
+.idea-card:hover::before{opacity:1;}
+.idea-num{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:7px;}
+.idea-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:7px;line-height:1.3;}
+.idea-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px;}
+.idea-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.idea-tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);color:var(--muted);}
+.ideas-footer{margin-top:36px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-secondary{background:transparent;border:1px solid var(--border2);border-radius:12px;padding:11px 22px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:color 0.15s,border-color 0.15s;}
+.btn-secondary:hover{color:var(--text);border-color:rgba(255,255,255,0.3);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1.1);}}
+@media(max-width:600px){.features{grid-template-columns:1fr;}.options-grid{grid-template-columns:repeat(2,1fr);}.ideas-header{flex-direction:column;}}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div id="app">
+  <header>
+    <div class="logo-mark"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2L12.5 8H18L13.5 12L15 18L10 14.5L5 18L6.5 12L2 8H7.5L10 2Z" fill="#0b0b0f"/></svg></div>
+    <div class="logo-text">Spark<span>.</span></div>
+    <div class="badge">AI Powered</div>
+  </header>
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="hero">
+      <div class="hero-label">✦ App Idea Generator</div>
+      <h1>Your next <em>big</em><br>app <span>idea</span> awaits.</h1>
+      <p>Answer 10 quick questions and get 10 tailored app ideas generated by AI — just for you.</p>
+      <button class="btn-primary" onclick="startFlow()">Generate Ideas →</button>
+    </div>
+    <div class="features">
+      <div class="feature-card"><div class="feature-icon" style="background:rgba(200,245,90,0.1);">🎯</div><h3>10 questions</h3><p>Smart follow-ups that adapt to what you pick</p></div>
+      <div class="feature-card"><div class="feature-icon" style="background:rgba(155,109,255,0.1);">⚡</div><h3>10 ideas</h3><p>A full set of specific, creative concepts every time</p></div>
+      <div class="feature-card"><div class="feature-icon" style="background:rgba(255,107,107,0.1);">🔄</div><h3>Refresh anytime</h3><p>Don't love them? Get a completely fresh batch</p></div>
+    </div>
+  </div>
+
+  <!-- QUESTIONS -->
+  <div id="screen-question" class="screen">
+    <div class="q-screen">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="q-step" id="q-step-label"></div>
+      <div class="q-question" id="q-question-text"></div>
+      <div class="q-sub" id="q-question-sub"></div>
+      <div class="options-grid" id="options-container"></div>
+      <div class="other-input-wrap" id="other-input-wrap">
+        <div class="other-label">✏️ Describe your answer:</div>
+        <input class="other-input" id="other-input" type="text" placeholder="Type your own answer…" oninput="onOtherInput()"/>
+      </div>
+      <textarea class="free-text-area" id="free-text-input" placeholder="" style="display:none;"></textarea>
+      <div class="q-nav">
+        <button class="btn-back" id="btn-back" onclick="goBack()">← Back</button>
+        <button class="btn-next" id="btn-next" onclick="goNext()">Continue →</button>
+        <button class="skip-link" id="btn-skip" onclick="skipQ()">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="screen-loading" class="screen">
+    <div class="loading-screen">
+      <div class="spark-loader">
+        <div class="loader-ring"></div>
+        <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+        <div class="loader-text">Sparking ideas...</div>
+        <div class="loader-sub" id="loading-msg">Analyzing your answers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDEAS -->
+  <div id="screen-ideas" class="screen">
+    <div class="ideas-screen">
+      <div class="ideas-header">
+        <div><h2>Your <span>10 ideas</span></h2><p id="ideas-sub">Based on your answers</p></div>
+        <button class="btn-refresh" id="btn-refresh" onclick="refreshIdeas()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8A6.5 6.5 0 1 0 3.2 3.2"/><path d="M1.5 4V8H5.5"/></svg>
+          Refresh ideas
+        </button>
+      </div>
+      <div class="ideas-list" id="ideas-list"></div>
+      <div class="ideas-footer">
+        <button class="btn-secondary" onclick="restart()">← Start Over</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+
+// ─── QUESTIONS ────────────────────────────────────────────────────────────────
+// Every category always has exactly 9 follow-up questions + Q1 (app type) = 10 total.
+// When multiple types are picked, we merge and cap at 9 follow-ups.
+
+const Q1 = {id:'app_type',type:'multi',required:true,
+  question:'What type of app do you want to build?',
+  sub:'Select all that apply — pick everything that fits your vision.',
+  options:[
+    {emoji:'🎮',label:'Video Game'},{emoji:'💼',label:'Productivity'},
+    {emoji:'❤️',label:'Social / Community'},{emoji:'🏋️',label:'Health & Fitness'},
+    {emoji:'📚',label:'Education & Learning'},{emoji:'🛍️',label:'Marketplace / E-commerce'},
+    {emoji:'🎵',label:'Entertainment / Media'},{emoji:'🛠️',label:'Developer Tool'},
+    {emoji:'💰',label:'Finance & Money'},{emoji:'🍕',label:'Food & Lifestyle'},
+  ]
+};
+
+const FOLLOWUPS = {
+'Video Game':[
+  {id:'g_genre',type:'multi',required:true,question:'What genre?',sub:'Select all that apply.',options:[{emoji:'🕹️',label:'Arcade'},{emoji:'🧩',label:'Puzzle'},{emoji:'⚔️',label:'RPG / Adventure'},{emoji:'🏃',label:'Platformer'},{emoji:'🃏',label:'Card / Board'},{emoji:'🔫',label:'Action / Shooter'},{emoji:'🏙️',label:'Simulation / Builder'},{emoji:'😱',label:'Horror / Survival'},{emoji:'🏎️',label:'Racing / Sports'}]},
+  {id:'g_platform',type:'multi',required:true,question:'Where will people play it?',sub:'Select all that apply.',options:[{emoji:'📱',label:'Mobile'},{emoji:'🖥️',label:'PC / Desktop'},{emoji:'🕹️',label:'Browser'},{emoji:'🎮',label:'Console'},{emoji:'🥽',label:'VR / AR'}]},
+  {id:'g_social',type:'multi',required:true,question:'Single player or multiplayer?',sub:'Select all that apply.',options:[{emoji:'🧍',label:'Single Player'},{emoji:'👥',label:'Competitive Multiplayer'},{emoji:'🤝',label:'Co-op'},{emoji:'🌍',label:'Massive Online (MMO)'},{emoji:'🔄',label:'Async / Turn-based'}]},
+  {id:'g_tone',type:'multi',required:false,question:'What visual tone?',sub:'Optional.',options:[{emoji:'🎨',label:'Pixel Art / Retro'},{emoji:'🌸',label:'Cute / Casual'},{emoji:'💀',label:'Dark / Gritty'},{emoji:'🌈',label:'Colorful / Cartoonish'},{emoji:'🔮',label:'Fantasy'},{emoji:'🤖',label:'Sci-Fi'}]},
+  {id:'g_monetize',type:'multi',required:false,question:'How will it make money?',sub:'Optional.',options:[{emoji:'🆓',label:'Free to play'},{emoji:'💵',label:'One-time purchase'},{emoji:'🎁',label:'In-app purchases'},{emoji:'💎',label:'Subscription / Season pass'},{emoji:'📺',label:'Ads'}]},
+  {id:'g_setting',type:'multi',required:false,question:'What is the game world setting?',sub:'Optional.',options:[{emoji:'🏰',label:'Medieval / Fantasy'},{emoji:'🚀',label:'Sci-Fi / Space'},{emoji:'🌆',label:'Modern / Real world'},{emoji:'🌿',label:'Nature / Wilderness'},{emoji:'🏙️',label:'Cyberpunk / Dystopia'},{emoji:'🎪',label:'Surreal / Abstract'}]},
+  {id:'g_session',type:'multi',required:false,question:'Typical play session length?',sub:'Optional.',options:[{emoji:'⚡',label:'Under 1 minute'},{emoji:'⏱️',label:'5–15 minutes'},{emoji:'🕐',label:'30–60 minutes'},{emoji:'🌙',label:'Hours at a time'}]},
+  {id:'g_inspiration',type:'multi',required:false,question:'Any games that inspire you?',sub:'Optional — helps set the tone.',options:[{emoji:'🟡',label:'Pac-Man / classic arcade'},{emoji:'🍄',label:'Mario / Nintendo style'},{emoji:'⚔️',label:'Zelda / Dark Souls'},{emoji:'🌍',label:'GTA / open world'},{emoji:'🌱',label:'Stardew / cozy sims'},{emoji:'🃏',label:'Hearthstone / Slay the Spire'}]},
+  {id:'g_extra',type:'text',required:false,question:'Anything else about your game idea?',sub:'Optional — share any specific mechanics, story ideas, or constraints.',placeholder:'e.g. "time travel mechanic", "set in ancient Japan", "short daily puzzles"…'},
+],
+'Productivity':[
+  {id:'p_focus',type:'multi',required:true,question:'What should the app help with?',sub:'Select all that apply.',options:[{emoji:'📋',label:'Task management'},{emoji:'📅',label:'Scheduling & Calendar'},{emoji:'🗒️',label:'Notes & Writing'},{emoji:'🤝',label:'Team Collaboration'},{emoji:'🤖',label:'Automation'},{emoji:'🎯',label:'Goal & Habit Tracking'},{emoji:'⏱️',label:'Time tracking'},{emoji:'📊',label:'Reporting & Dashboards'}]},
+  {id:'p_who',type:'multi',required:true,question:'Who is the primary user?',sub:'Select all that apply.',options:[{emoji:'👤',label:'Individuals'},{emoji:'🧑‍💼',label:'Professionals & Teams'},{emoji:'🎓',label:'Students'},{emoji:'🏢',label:'Enterprises'},{emoji:'🧑‍🎨',label:'Freelancers & Creators'},{emoji:'🏠',label:'Households / Families'}]},
+  {id:'p_device',type:'multi',required:false,question:'Main device?',sub:'Optional.',options:[{emoji:'📱',label:'Mobile-first'},{emoji:'🖥️',label:'Desktop / Web'},{emoji:'⌚',label:'Wearable'},{emoji:'🔄',label:'Cross-platform'}]},
+  {id:'p_ai',type:'multi',required:false,question:'Should AI play a key role?',sub:'Optional.',options:[{emoji:'🤖',label:'Yes — heavily AI-driven'},{emoji:'✨',label:'Some smart suggestions'},{emoji:'🚫',label:'No — keep it manual'}]},
+  {id:'p_pain',type:'multi',required:false,question:'What is the biggest pain it solves?',sub:'Optional.',options:[{emoji:'😵',label:'Too many distractions'},{emoji:'🗂️',label:'Disorganization'},{emoji:'📧',label:'Email / communication overload'},{emoji:'🤯',label:'Decision fatigue'},{emoji:'😴',label:'Procrastination'},{emoji:'🤝',label:'Team misalignment'}]},
+  {id:'p_style',type:'multi',required:false,question:"App's design philosophy?",sub:'Optional.',options:[{emoji:'🧘',label:'Minimal & calm'},{emoji:'⚡',label:'Fast & power-user'},{emoji:'🎮',label:'Gamified & fun'},{emoji:'📊',label:'Data-heavy & analytical'},{emoji:'🤝',label:'Collaborative-first'}]},
+  {id:'p_integrate',type:'multi',required:false,question:'Key integrations needed?',sub:'Optional.',options:[{emoji:'📧',label:'Email (Gmail/Outlook)'},{emoji:'📅',label:'Google / Apple Calendar'},{emoji:'💬',label:'Slack / Teams'},{emoji:'📁',label:'Google Drive / Dropbox'},{emoji:'🔗',label:'Zapier / Make (automation)'}]},
+  {id:'p_model',type:'multi',required:false,question:'Business model?',sub:'Optional.',options:[{emoji:'🆓',label:'Free forever'},{emoji:'💎',label:'Freemium'},{emoji:'💵',label:'Paid subscription'},{emoji:'🏢',label:'Enterprise / B2B'}]},
+  {id:'p_extra',type:'text',required:false,question:'Anything else about your productivity app?',sub:'Optional — any specific features, workflows, or constraints.',placeholder:'e.g. "offline-first", "voice input", "inspired by Getting Things Done"…'},
+],
+'Social / Community':[
+  {id:'s_niche',type:'multi',required:true,question:'What kind of social space?',sub:'Select all that apply.',options:[{emoji:'💬',label:'Chat & Messaging'},{emoji:'📸',label:'Photo / Video sharing'},{emoji:'🎯',label:'Niche Interest Groups'},{emoji:'📍',label:'Location-based'},{emoji:'🤝',label:'Professional Networking'},{emoji:'📣',label:'Creator Platform'},{emoji:'🎮',label:'Gaming Social'}]},
+  {id:'s_audience',type:'multi',required:true,question:'Who is your target audience?',sub:'Select all that apply.',options:[{emoji:'🧑‍🎓',label:'Teens & Students'},{emoji:'👩‍💻',label:'Young Adults (20s–30s)'},{emoji:'👪',label:'Families'},{emoji:'🌐',label:'Global / Everyone'},{emoji:'🏘️',label:'Local Communities'},{emoji:'🏢',label:'Professionals'},{emoji:'🎮',label:'Gamers'}]},
+  {id:'s_feature',type:'multi',required:false,question:'What makes it stand out?',sub:'Optional.',options:[{emoji:'🕵️',label:'Anonymous / low-pressure'},{emoji:'🎭',label:'Creative expression'},{emoji:'🏆',label:'Gamified & rewards'},{emoji:'🤫',label:'Private / invite-only'},{emoji:'🌍',label:'Cross-language'},{emoji:'🔥',label:'Ephemeral / disappearing content'}]},
+  {id:'s_content',type:'multi',required:false,question:'What type of content is shared?',sub:'Optional.',options:[{emoji:'📝',label:'Text / Posts'},{emoji:'📸',label:'Photos'},{emoji:'🎬',label:'Short videos'},{emoji:'🎵',label:'Audio / Podcasts'},{emoji:'📡',label:'Live streaming'},{emoji:'🗳️',label:'Polls & votes'}]},
+  {id:'s_safety',type:'multi',required:false,question:'What safety features matter?',sub:'Optional.',options:[{emoji:'✅',label:'Verified identities'},{emoji:'🛡️',label:'Content moderation'},{emoji:'🔒',label:'End-to-end encryption'},{emoji:'👁️',label:'Parental controls'},{emoji:'🚩',label:'Community reporting'}]},
+  {id:'s_discovery',type:'multi',required:false,question:'How do users discover new people / content?',sub:'Optional.',options:[{emoji:'📍',label:'Nearby / local'},{emoji:'#️⃣',label:'Hashtags & topics'},{emoji:'🤖',label:'Algorithm recommendations'},{emoji:'👥',label:'Friends of friends'},{emoji:'🎯',label:'Interest matching'}]},
+  {id:'s_events',type:'multi',required:false,question:'Does the app include events or meetups?',sub:'Optional.',options:[{emoji:'🗓️',label:'Virtual events'},{emoji:'📍',label:'In-person meetups'},{emoji:'🎤',label:'Live audio rooms'},{emoji:'🎮',label:'In-app gaming together'},{emoji:'🚫',label:'No events'}]},
+  {id:'s_monetize',type:'multi',required:false,question:'How does the community sustain itself?',sub:'Optional.',options:[{emoji:'🆓',label:'Free / ad-supported'},{emoji:'💎',label:'Subscription'},{emoji:'🛒',label:'Marketplace'},{emoji:'🎁',label:'Creator tipping'},{emoji:'🏆',label:'Premium badges / status'}]},
+  {id:'s_extra',type:'text',required:false,question:'Anything else about your social app?',sub:'Optional.',placeholder:'e.g. "for dog owners only", "Reddit-style voting", "focus on mental health support"…'},
+],
+'Health & Fitness':[
+  {id:'h_focus',type:'multi',required:true,question:'What health area?',sub:'Select all that apply.',options:[{emoji:'🏋️',label:'Workouts & Exercise'},{emoji:'🍎',label:'Nutrition & Diet'},{emoji:'🧘',label:'Mental Wellness'},{emoji:'😴',label:'Sleep & Recovery'},{emoji:'🩺',label:'Medical Tracking'},{emoji:'🚶',label:'Daily Habits'},{emoji:'🤸',label:'Flexibility / Mobility'},{emoji:'💊',label:'Medication reminders'}]},
+  {id:'h_who',type:'multi',required:true,question:'Who is the target user?',sub:'Select all that apply.',options:[{emoji:'🧒',label:'Kids & Families'},{emoji:'💪',label:'Gym Enthusiasts'},{emoji:'🧓',label:'Older Adults (60+)'},{emoji:'🤒',label:'Managing illness'},{emoji:'🌱',label:'Beginners'},{emoji:'🏃',label:'Athletes & runners'}]},
+  {id:'h_feature',type:'multi',required:false,question:'Key features?',sub:'Optional.',options:[{emoji:'🤖',label:'AI coaching'},{emoji:'👥',label:'Social challenges'},{emoji:'📊',label:'Deep analytics'},{emoji:'🎮',label:'Gamification & streaks'},{emoji:'🩻',label:'Wearable integration'},{emoji:'📷',label:'Photo tracking (food / progress)'}]},
+  {id:'h_platform',type:'multi',required:false,question:'Primary platform?',sub:'Optional.',options:[{emoji:'📱',label:'Mobile'},{emoji:'⌚',label:'Smartwatch'},{emoji:'🖥️',label:'Web dashboard'},{emoji:'📺',label:'Smart TV / screen'}]},
+  {id:'h_motivation',type:'multi',required:false,question:'How does it keep users motivated?',sub:'Optional.',options:[{emoji:'🏆',label:'Leaderboards & competition'},{emoji:'🔥',label:'Streaks & daily goals'},{emoji:'🤝',label:'Accountability partner'},{emoji:'🎁',label:'Rewards & prizes'},{emoji:'📈',label:'Progress visualization'}]},
+  {id:'h_data',type:'multi',required:false,question:'What data does it track?',sub:'Optional.',options:[{emoji:'❤️',label:'Heart rate / vitals'},{emoji:'🍽️',label:'Calories & macros'},{emoji:'💧',label:'Water intake'},{emoji:'🚶',label:'Steps & movement'},{emoji:'😴',label:'Sleep quality'},{emoji:'😊',label:'Mood & energy'}]},
+  {id:'h_professional',type:'multi',required:false,question:'Does it involve health professionals?',sub:'Optional.',options:[{emoji:'👨‍⚕️',label:'Connects to doctors / coaches'},{emoji:'📋',label:'Shareable health reports'},{emoji:'🏥',label:'Insurance / HSA integration'},{emoji:'🚫',label:'No — fully self-managed'}]},
+  {id:'h_privacy',type:'multi',required:false,question:'Privacy approach?',sub:'Optional.',options:[{emoji:'🔒',label:'Everything stays on device'},{emoji:'☁️',label:'Cloud sync is fine'},{emoji:'👨‍⚕️',label:'HIPAA / medical-grade privacy'},{emoji:'👥',label:'Share with friends / family'}]},
+  {id:'h_extra',type:'text',required:false,question:'Anything else about your health app?',sub:'Optional.',placeholder:'e.g. "for postpartum recovery", "integrates with Apple Health", "no calorie counting"…'},
+],
+'Education & Learning':[
+  {id:'e_subject',type:'multi',required:true,question:'What subject or skill?',sub:'Select all that apply.',options:[{emoji:'💻',label:'Coding & Tech'},{emoji:'🌍',label:'Languages'},{emoji:'🔬',label:'Science & Math'},{emoji:'🎨',label:'Creative Arts'},{emoji:'📈',label:'Business & Finance'},{emoji:'🧠',label:'Life Skills'},{emoji:'🎵',label:'Music & Instruments'},{emoji:'📖',label:'Reading & Writing'}]},
+  {id:'e_style',type:'multi',required:true,question:'Style of learning?',sub:'Select all that apply.',options:[{emoji:'🎮',label:'Gamified & Interactive'},{emoji:'📹',label:'Video Courses'},{emoji:'🃏',label:'Flashcards & Quizzing'},{emoji:'🤝',label:'Live Tutoring'},{emoji:'📖',label:'Reading & Articles'},{emoji:'🤖',label:'AI personalization'},{emoji:'🧪',label:'Projects & challenges'}]},
+  {id:'e_age',type:'multi',required:true,question:'What age group?',sub:'Select all that apply.',options:[{emoji:'🧒',label:'Kids (5–12)'},{emoji:'🎒',label:'Teens (13–17)'},{emoji:'🎓',label:'College Students'},{emoji:'👩‍💼',label:'Working Adults'},{emoji:'🧓',label:'Seniors'}]},
+  {id:'e_format',type:'multi',required:false,question:'Lesson format?',sub:'Optional.',options:[{emoji:'⚡',label:'Micro-lessons (under 5 min)'},{emoji:'📚',label:'Deep structured courses'},{emoji:'🔄',label:'Mix of both'},{emoji:'📆',label:'Daily challenges / streaks'}]},
+  {id:'e_social',type:'multi',required:false,question:'Does it have a social element?',sub:'Optional.',options:[{emoji:'👥',label:'Study groups'},{emoji:'🏆',label:'Leaderboards'},{emoji:'🤝',label:'Peer tutoring'},{emoji:'💬',label:'Discussion forums'},{emoji:'🚫',label:'No — solo learning only'}]},
+  {id:'e_cert',type:'multi',required:false,question:'Does it offer certificates or credentials?',sub:'Optional.',options:[{emoji:'🏅',label:'Certificates of completion'},{emoji:'🎓',label:'Accredited credentials'},{emoji:'📋',label:'Portfolio / showcase'},{emoji:'🚫',label:'No credentials needed'}]},
+  {id:'e_access',type:'multi',required:false,question:'Accessibility needs?',sub:'Optional.',options:[{emoji:'🌐',label:'Works offline'},{emoji:'♿',label:'Accessibility features (screen reader etc.)'},{emoji:'🌍',label:'Multi-language support'},{emoji:'📱',label:'Low-bandwidth friendly'}]},
+  {id:'e_model',type:'multi',required:false,question:'Business model?',sub:'Optional.',options:[{emoji:'🆓',label:'Free forever'},{emoji:'💎',label:'Freemium'},{emoji:'💵',label:'Subscription'},{emoji:'🏫',label:'School / institution licensing'}]},
+  {id:'e_extra',type:'text',required:false,question:'Anything else about your education app?',sub:'Optional.',placeholder:'e.g. "for dyslexic learners", "no more than 5 min/day", "inspired by Duolingo"…'},
+],
+'Marketplace / E-commerce':[
+  {id:'m_type',type:'multi',required:true,question:'What kind of marketplace?',sub:'Select all that apply.',options:[{emoji:'🛍️',label:'Physical Goods'},{emoji:'💡',label:'Digital Products'},{emoji:'🛠️',label:'Services & Freelancers'},{emoji:'🏡',label:'Rentals & Sharing'},{emoji:'🎨',label:'Handmade & Artisan'},{emoji:'🔄',label:'Second-hand & Resale'},{emoji:'🌿',label:'Sustainable / Eco'}]},
+  {id:'m_who',type:'multi',required:true,question:'Who is buying and selling?',sub:'Select all that apply.',options:[{emoji:'👤',label:'Consumer to Consumer'},{emoji:'🏢',label:'Business to Consumer'},{emoji:'🏢',label:'Business to Business'},{emoji:'🧑‍🎨',label:'Creator to Fan'},{emoji:'🌍',label:'Cross-border / Global'}]},
+  {id:'m_niche',type:'multi',required:false,question:'General or niche?',sub:'Optional.',options:[{emoji:'🌐',label:'General / everything'},{emoji:'🎯',label:'One specific niche'},{emoji:'📍',label:'Local / city-based'},{emoji:'🌿',label:'Specific community / identity'}]},
+  {id:'m_trust',type:'multi',required:false,question:'What builds buyer trust?',sub:'Optional.',options:[{emoji:'⭐',label:'Reviews & ratings'},{emoji:'🔐',label:'Verified sellers'},{emoji:'💳',label:'Escrow / secure payments'},{emoji:'🛡️',label:'Buyer protection'},{emoji:'🤝',label:'In-person meetup option'}]},
+  {id:'m_discovery',type:'multi',required:false,question:'How do buyers discover products?',sub:'Optional.',options:[{emoji:'🔍',label:'Search & filters'},{emoji:'🤖',label:'AI recommendations'},{emoji:'📍',label:'Location / map view'},{emoji:'👥',label:'Social / community picks'},{emoji:'🔥',label:'Trending / featured'}]},
+  {id:'m_logistics',type:'multi',required:false,question:'Does it handle logistics?',sub:'Optional.',options:[{emoji:'📦',label:'Shipping integration'},{emoji:'🤝',label:'Local pickup / handoff'},{emoji:'📥',label:'Instant digital delivery'},{emoji:'🚫',label:'No — sellers handle it'}]},
+  {id:'m_payment',type:'multi',required:false,question:'Payment features needed?',sub:'Optional.',options:[{emoji:'💳',label:'Credit / debit cards'},{emoji:'📱',label:'Apple / Google Pay'},{emoji:'🌍',label:'Multi-currency'},{emoji:'₿',label:'Crypto'},{emoji:'🤝',label:'Installments / Buy now pay later'}]},
+  {id:'m_model',type:'multi',required:false,question:'How does the platform make money?',sub:'Optional.',options:[{emoji:'💸',label:'Commission per sale'},{emoji:'💎',label:'Seller subscription'},{emoji:'📣',label:'Promoted listings'},{emoji:'🏷️',label:'Listing fees'}]},
+  {id:'m_extra',type:'text',required:false,question:'Anything else about your marketplace?',sub:'Optional.',placeholder:'e.g. "only for vintage clothing", "no shipping — local pickup only", "inspired by Depop"…'},
+],
+'Entertainment / Media':[
+  {id:'en_type',type:'multi',required:true,question:'What type of content?',sub:'Select all that apply.',options:[{emoji:'🎬',label:'Video & Streaming'},{emoji:'🎵',label:'Music & Podcasts'},{emoji:'📖',label:'Stories & Reading'},{emoji:'😂',label:'Memes & Short-form'},{emoji:'🎲',label:'Interactive Fiction'},{emoji:'🎭',label:'Live Events'},{emoji:'🎨',label:'Creative / Fan content'}]},
+  {id:'en_creator',type:'multi',required:true,question:'Who creates the content?',sub:'Select all that apply.',options:[{emoji:'🏢',label:'Professional / Curated'},{emoji:'👤',label:'User-generated'},{emoji:'🤖',label:'AI-generated'},{emoji:'🤝',label:'Mixed'},{emoji:'🧑‍🎨',label:'Independent creators'}]},
+  {id:'en_hook',type:'multi',required:false,question:'What keeps users coming back?',sub:'Optional.',options:[{emoji:'🏆',label:'Competitions'},{emoji:'🔔',label:'Daily fresh content'},{emoji:'👥',label:'Social features'},{emoji:'📈',label:'Personalized recs'},{emoji:'🎁',label:'Rewards & collectibles'},{emoji:'🔥',label:'Trending / viral content'}]},
+  {id:'en_format',type:'multi',required:false,question:'Content format?',sub:'Optional.',options:[{emoji:'⚡',label:'Under 60 seconds'},{emoji:'📱',label:'Short-form (1–10 min)'},{emoji:'🎬',label:'Long-form (30+ min)'},{emoji:'📡',label:'Live only'},{emoji:'🔄',label:'Mix'}]},
+  {id:'en_community',type:'multi',required:false,question:'Community / interaction features?',sub:'Optional.',options:[{emoji:'💬',label:'Comments & reactions'},{emoji:'👥',label:'Fan clubs / groups'},{emoji:'🤝',label:'Co-watching / listening'},{emoji:'🎤',label:'Creator Q&A / live chat'},{emoji:'🚫',label:'No — solo experience'}]},
+  {id:'en_discovery',type:'multi',required:false,question:'How do users find new content?',sub:'Optional.',options:[{emoji:'🤖',label:'Algorithm / FYP'},{emoji:'👥',label:'Friend recommendations'},{emoji:'#️⃣',label:'Tags & categories'},{emoji:'🔥',label:'Trending charts'},{emoji:'🎯',label:'Mood / vibe matching'}]},
+  {id:'en_exclusivity',type:'multi',required:false,question:'Exclusivity model?',sub:'Optional.',options:[{emoji:'🌐',label:'All content free & open'},{emoji:'💎',label:'Premium exclusive content'},{emoji:'🎟️',label:'Pay-per-event / item'},{emoji:'🤫',label:'Members-only / private'}]},
+  {id:'en_model',type:'multi',required:false,question:'Business model?',sub:'Optional.',options:[{emoji:'🆓',label:'Free / ads'},{emoji:'💎',label:'Subscription'},{emoji:'💸',label:'Creator revenue share'},{emoji:'🎟️',label:'Tickets / events'}]},
+  {id:'en_extra',type:'text',required:false,question:'Anything else about your entertainment app?',sub:'Optional.',placeholder:'e.g. "for indie musicians", "like Letterboxd but for books", "ambient background content"…'},
+],
+'Developer Tool':[
+  {id:'d_type',type:'multi',required:true,question:'What kind of tool?',sub:'Select all that apply.',options:[{emoji:'🤖',label:'AI / LLM integration'},{emoji:'🔧',label:'Code Editor / IDE plugin'},{emoji:'🗄️',label:'Database / Backend'},{emoji:'📊',label:'Analytics & Monitoring'},{emoji:'🔐',label:'Security & Auth'},{emoji:'📡',label:'APIs & Integrations'},{emoji:'🧪',label:'Testing & QA'},{emoji:'🚀',label:'Deployment / DevOps'}]},
+  {id:'d_audience',type:'multi',required:true,question:'Who uses it?',sub:'Select all that apply.',options:[{emoji:'🧑‍💻',label:'Individual devs'},{emoji:'👥',label:'Dev teams & startups'},{emoji:'🏢',label:'Enterprise engineering'},{emoji:'🎓',label:'Beginner / learning devs'},{emoji:'🧑‍🔬',label:'Data scientists / ML engineers'}]},
+  {id:'d_delivery',type:'multi',required:false,question:'How is it delivered?',sub:'Optional.',options:[{emoji:'🖥️',label:'Desktop / CLI'},{emoji:'🌐',label:'Web dashboard'},{emoji:'🔌',label:'IDE plugin'},{emoji:'☁️',label:'Cloud SaaS'},{emoji:'📦',label:'npm / pip package'}]},
+  {id:'d_pain',type:'multi',required:false,question:'What problem does it solve?',sub:'Optional.',options:[{emoji:'⏱️',label:'Saves time / reduces repetition'},{emoji:'🐛',label:'Catches bugs faster'},{emoji:'📚',label:'Reduces boilerplate'},{emoji:'🤝',label:'Better team coordination'},{emoji:'💡',label:'More visibility & insights'},{emoji:'🔐',label:'Security & compliance'}]},
+  {id:'d_language',type:'multi',required:false,question:'Language / stack focus?',sub:'Optional.',options:[{emoji:'🟨',label:'JavaScript / TypeScript'},{emoji:'🐍',label:'Python'},{emoji:'🦀',label:'Rust / Go / systems'},{emoji:'☕',label:'Java / Kotlin'},{emoji:'🌐',label:'Language-agnostic'}]},
+  {id:'d_ai',type:'multi',required:false,question:'AI / automation features?',sub:'Optional.',options:[{emoji:'✍️',label:'Code generation / autocomplete'},{emoji:'🔍',label:'Intelligent code review'},{emoji:'📝',label:'Auto-documentation'},{emoji:'🐛',label:'AI debugging assistant'},{emoji:'🚫',label:'No AI — deterministic only'}]},
+  {id:'d_open',type:'multi',required:false,question:'Open source or commercial?',sub:'Optional.',options:[{emoji:'🌐',label:'Fully open source'},{emoji:'💎',label:'Commercial / paid'},{emoji:'🔄',label:'Open core (free + paid tiers)'},{emoji:'🏢',label:'Enterprise licensed'}]},
+  {id:'d_model',type:'multi',required:false,question:'Pricing model?',sub:'Optional.',options:[{emoji:'🆓',label:'Free forever'},{emoji:'💵',label:'Per seat / per user'},{emoji:'📊',label:'Usage-based'},{emoji:'🏢',label:'Enterprise contract'}]},
+  {id:'d_extra',type:'text',required:false,question:'Anything else about your dev tool?',sub:'Optional.',placeholder:'e.g. "CLI-first", "for solo indie devs", "think Linear but for X"…'},
+],
+'Finance & Money':[
+  {id:'f_focus',type:'multi',required:true,question:'What finance area?',sub:'Select all that apply.',options:[{emoji:'💳',label:'Personal Budgeting'},{emoji:'📈',label:'Investing & Trading'},{emoji:'🏦',label:'Banking & Payments'},{emoji:'💸',label:'Saving Goals'},{emoji:'🧾',label:'Expense Tracking'},{emoji:'🏢',label:'Business Finance'},{emoji:'🌍',label:'International / Remittance'},{emoji:'💊',label:'Insurance & protection'}]},
+  {id:'f_who',type:'multi',required:true,question:'Who is your user?',sub:'Select all that apply.',options:[{emoji:'🧑‍🎓',label:'Young adults / first job'},{emoji:'👨‍👩‍👧',label:'Families'},{emoji:'🧑‍💼',label:'Professionals'},{emoji:'🏢',label:'Small business owners'},{emoji:'🌍',label:'Underbanked / emerging markets'},{emoji:'📈',label:'Active investors'}]},
+  {id:'f_style',type:'multi',required:false,question:"App's approach?",sub:'Optional.',options:[{emoji:'📊',label:'Data-heavy & analytical'},{emoji:'🎮',label:'Gamified & fun'},{emoji:'🤖',label:'AI-driven automation'},{emoji:'🧘',label:'Calm & stress-reducing'},{emoji:'👥',label:'Social / shared finances'}]},
+  {id:'f_feature',type:'multi',required:false,question:'Key features?',sub:'Optional.',options:[{emoji:'🔗',label:'Bank account sync'},{emoji:'📷',label:'Receipt scanning'},{emoji:'🤖',label:'AI advisor'},{emoji:'🎯',label:'Smart auto-saving'},{emoji:'🌐',label:'Multi-currency'},{emoji:'📊',label:'Investment portfolio tracking'}]},
+  {id:'f_goal',type:'multi',required:false,question:'What financial goal does it help with?',sub:'Optional.',options:[{emoji:'🏠',label:'Saving for a home'},{emoji:'✈️',label:'Travel fund'},{emoji:'🎓',label:'Education savings'},{emoji:'💼',label:'Retirement planning'},{emoji:'💸',label:'Getting out of debt'},{emoji:'🚀',label:'Building wealth / investing'}]},
+  {id:'f_automation',type:'multi',required:false,question:'Automation features?',sub:'Optional.',options:[{emoji:'💰',label:'Auto-save round-ups'},{emoji:'📊',label:'Auto-categorize expenses'},{emoji:'🔔',label:'Bill & subscription alerts'},{emoji:'🤖',label:'AI spending insights'},{emoji:'🚫',label:'Manual only'}]},
+  {id:'f_trust',type:'multi',required:false,question:'What builds user trust?',sub:'Optional.',options:[{emoji:'🔐',label:'Bank-level encryption'},{emoji:'✅',label:'Regulatory compliance'},{emoji:'👁️',label:'Full data transparency'},{emoji:'🏦',label:'Partnered with real banks'},{emoji:'🔒',label:'No selling data'}]},
+  {id:'f_model',type:'multi',required:false,question:'Business model?',sub:'Optional.',options:[{emoji:'🆓',label:'Free (interest on deposits)'},{emoji:'💎',label:'Subscription'},{emoji:'💸',label:'Transaction fees'},{emoji:'🤝',label:'Affiliate / referral'}]},
+  {id:'f_extra',type:'text',required:false,question:'Anything else about your finance app?',sub:'Optional.',placeholder:'e.g. "for couples managing joint expenses", "crypto-first", "no credit card needed"…'},
+],
+'Food & Lifestyle':[
+  {id:'fo_focus',type:'multi',required:true,question:'What lifestyle niche?',sub:'Select all that apply.',options:[{emoji:'🍳',label:'Cooking & Recipes'},{emoji:'🍽️',label:'Restaurant Discovery'},{emoji:'🌿',label:'Sustainable Living'},{emoji:'✈️',label:'Travel & Adventure'},{emoji:'👗',label:'Fashion & Style'},{emoji:'🏠',label:'Home & Interior'},{emoji:'🛒',label:'Grocery & Meal planning'},{emoji:'🍷',label:'Food & drink enthusiast'}]},
+  {id:'fo_who',type:'multi',required:true,question:'Who is this for?',sub:'Select all that apply.',options:[{emoji:'🧑‍🍳',label:'Home cooks'},{emoji:'🌱',label:'Health-conscious eaters'},{emoji:'💑',label:'Couples & social diners'},{emoji:'✈️',label:'Travelers & explorers'},{emoji:'🎓',label:'Students on a budget'},{emoji:'👨‍👩‍👧',label:'Families with kids'}]},
+  {id:'fo_feature',type:'multi',required:false,question:'Key features?',sub:'Optional.',options:[{emoji:'📷',label:'Camera / photo recognition'},{emoji:'🤖',label:'AI personalization'},{emoji:'👥',label:'Social sharing'},{emoji:'📅',label:'Meal planning'},{emoji:'🛒',label:'Grocery & shopping sync'},{emoji:'🌍',label:'Local / regional focus'}]},
+  {id:'fo_vibe',type:'multi',required:false,question:"App's vibe?",sub:'Optional.',options:[{emoji:'✨',label:'Premium & aspirational'},{emoji:'😊',label:'Fun & accessible'},{emoji:'🌱',label:'Mindful & slow'},{emoji:'⚡',label:'Fast & practical'},{emoji:'🎉',label:'Social & celebratory'}]},
+  {id:'fo_diet',type:'multi',required:false,question:'Any dietary focus?',sub:'Optional.',options:[{emoji:'🌱',label:'Vegan / plant-based'},{emoji:'🥩',label:'High protein / keto'},{emoji:'🌾',label:'Gluten-free'},{emoji:'🕌',label:'Halal / Kosher'},{emoji:'🥗',label:'General healthy eating'},{emoji:'🚫',label:'No specific diet'}]},
+  {id:'fo_content',type:'multi',required:false,question:'What kind of content does it feature?',sub:'Optional.',options:[{emoji:'📹',label:'Video recipes'},{emoji:'📸',label:'Food photos & inspiration'},{emoji:'📝',label:'Written recipes & guides'},{emoji:'⭐',label:'Reviews & ratings'},{emoji:'🔴',label:'Live cooking streams'}]},
+  {id:'fo_social',type:'multi',required:false,question:'Social features?',sub:'Optional.',options:[{emoji:'👥',label:'Follow chefs / creators'},{emoji:'🤝',label:'Cooking challenges'},{emoji:'💬',label:'Community tips & comments'},{emoji:'🗓️',label:'Virtual dinner parties'},{emoji:'🚫',label:'No — solo experience'}]},
+  {id:'fo_model',type:'multi',required:false,question:'Business model?',sub:'Optional.',options:[{emoji:'🆓',label:'Free'},{emoji:'💎',label:'Subscription'},{emoji:'🛒',label:'Grocery partnerships'},{emoji:'🍽️',label:'Restaurant / brand partnerships'},{emoji:'🎓',label:'Paid courses / classes'}]},
+  {id:'fo_extra',type:'text',required:false,question:'Anything else about your food / lifestyle app?',sub:'Optional.',placeholder:'e.g. "for people with food allergies", "TikTok-style cooking videos", "focus on fermentation"…'},
+],
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let answers = {};
+let flow = [];
+let idx = 0;
+
+// ─── FLOW BUILDER ─────────────────────────────────────────────────────────────
+// Always builds exactly 10 questions:
+// Q1 (app type) + 9 follow-ups from chosen category/categories
+function buildFlow(types) {
+  const seen = new Set();
+  const pool = [];
+  (Array.isArray(types)?types:[types]).forEach(t=>{
+    (FOLLOWUPS[t]||[]).forEach(q=>{ if(!seen.has(q.id)){seen.add(q.id);pool.push(q);} });
+  });
+  // Take exactly 9 follow-ups: prioritize required ones first, then fill with optional
+  const required = pool.filter(q=>q.required);
+  const optional = pool.filter(q=>!q.required);
+  const selected = [...required, ...optional].slice(0,9);
+  flow = [Q1, ...selected];
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function startFlow(){
+  answers={};idx=0;
+  flow=[Q1,...(FOLLOWUPS['Video Game']||[]).slice(0,9)]; // placeholder until Q1 answered
+  renderQ();
+  showScreen('question');
+}
+
+function restart(){
+  answers={};idx=0;
+  showScreen('home');
+}
+
+// ─── RENDER QUESTION ─────────────────────────────────────────────────────────
+function renderQ(){
+  const q=flow[idx];
+  const pct=Math.round((idx/flow.length)*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('q-step-label').textContent=`Question ${idx+1} of ${flow.length}`;
+  document.getElementById('q-question-text').textContent=q.question;
+  document.getElementById('q-question-sub').textContent=q.sub||'';
+
+  const container=document.getElementById('options-container');
+  const textarea=document.getElementById('free-text-input');
+  const otherWrap=document.getElementById('other-input-wrap');
+  const otherInput=document.getElementById('other-input');
+  const btnNext=document.getElementById('btn-next');
+  const btnBack=document.getElementById('btn-back');
+  const btnSkip=document.getElementById('btn-skip');
+
+  otherWrap.classList.remove('visible');
+  otherInput.value='';
+
+  if(q.type==='text'){
+    container.style.display='none';
+    textarea.style.display='block';
+    textarea.placeholder=q.placeholder||'';
+    textarea.value=(answers[q.id]||[])[0]||'';
+    btnNext.disabled=false;
+    btnSkip.style.display='inline-block';
+  } else {
+    container.style.display='grid';
+    textarea.style.display='none';
+    btnSkip.style.display=q.required?'none':'inline-block';
+    container.innerHTML='';
+
+    const hint=document.createElement('div');
+    hint.className='multi-hint';
+    hint.innerHTML='<strong>Select all that apply</strong> — pick as many as you like';
+    container.appendChild(hint);
+
+    const sel=answers[q.id]||[];
+    q.options.forEach(opt=>{
+      const isSelected=sel.includes(opt.label);
+      const btn=document.createElement('button');
+      btn.className='option-btn'+(isSelected?' selected':'');
+      btn.innerHTML=`<span class="option-emoji">${opt.emoji}</span><span class="option-label">${opt.label}</span><span class="option-check">${isSelected?'✓':''}</span>`;
+      btn.addEventListener('click',()=>toggleOpt(q,opt.label,btn));
+      container.appendChild(btn);
+    });
+
+    // Other button
+    const otherVals=sel.filter(s=>!q.options.find(o=>o.label===s));
+    const otherSelected=otherVals.length>0;
+    const otherBtn=document.createElement('button');
+    otherBtn.id='other-opt-btn';
+    otherBtn.className='option-btn'+(otherSelected?' selected':'');
+    otherBtn.innerHTML=`<span class="option-emoji">✏️</span><span class="option-label">Other</span><span class="option-check">${otherSelected?'✓':''}</span>`;
+    otherBtn.addEventListener('click',()=>toggleOtherBtn(q,otherBtn));
+    container.appendChild(otherBtn);
+
+    if(otherSelected){
+      otherWrap.classList.add('visible');
+      otherInput.value=otherVals[0]||'';
+    }
+
+    updateNext(q);
+  }
+
+  btnBack.style.display=idx===0?'none':'inline-block';
+  btnNext.textContent=idx===flow.length-1?'Generate Ideas ✦':'Continue →';
+}
+
+function toggleOpt(q,label,btn){
+  if(!answers[q.id])answers[q.id]=[];
+  const i=answers[q.id].indexOf(label);
+  if(i===-1){answers[q.id].push(label);btn.classList.add('selected');btn.querySelector('.option-check').textContent='✓';}
+  else{answers[q.id].splice(i,1);btn.classList.remove('selected');btn.querySelector('.option-check').textContent='';}
+  updateNext(q);
+}
+
+function toggleOtherBtn(q,btn){
+  const wrap=document.getElementById('other-input-wrap');
+  const inp=document.getElementById('other-input');
+  if(wrap.classList.contains('visible')){
+    const val=inp.value.trim();
+    if(val&&answers[q.id])answers[q.id]=answers[q.id].filter(s=>q.options.find(o=>o.label===s));
+    inp.value='';wrap.classList.remove('visible');
+    btn.classList.remove('selected');btn.querySelector('.option-check').textContent='';
+  } else {
+    wrap.classList.add('visible');inp.focus();
+    btn.classList.add('selected');btn.querySelector('.option-check').textContent='✓';
+  }
+  updateNext(q);
+}
+
+function onOtherInput(){
+  const q=flow[idx];
+  const val=document.getElementById('other-input').value.trim();
+  if(!answers[q.id])answers[q.id]=[];
+  answers[q.id]=answers[q.id].filter(s=>q.options.find(o=>o.label===s));
+  if(val)answers[q.id].push(val);
+  updateNext(q);
+}
+
+function updateNext(q){
+  document.getElementById('btn-next').disabled=!!(q.required&&!(answers[q.id]&&answers[q.id].length>0));
+}
+
+function goNext(){
+  const q=flow[idx];
+  if(q.type==='text'){
+    const val=document.getElementById('free-text-input').value.trim();
+    answers[q.id]=val?[val]:[];
+  }
+  if(q.id==='app_type'){
+    buildFlow(answers['app_type']||[]);
+  }
+  if(idx>=flow.length-1){doGenerate();return;}
+  idx++;renderQ();
+}
+
+function goBack(){
+  if(idx===0)return;
+  idx--;renderQ();
+}
+
+function skipQ(){
+  const q=flow[idx];
+  answers[q.id]=[];
+  if(idx>=flow.length-1){doGenerate();return;}
+  idx++;renderQ();
+}
+
+// ─── GENERATION ──────────────────────────────────────────────────────────────
+function buildPrompt(isRefresh){
+  const parts=[];
+  flow.forEach(q=>{const a=answers[q.id];if(a&&a.length>0)parts.push(`• ${q.question} → ${a.join(', ')}`);});
+  return `You are an expert product strategist and creative app idea generator.
+
+The user answered these questions:
+${parts.join('\n')}
+
+Generate exactly 10 creative, specific, commercially viable app ideas that DIRECTLY match the user's answers above.${isRefresh?' Generate COMPLETELY DIFFERENT ideas from any prior response.':''}
+
+Return ONLY a raw JSON array of exactly 10 objects. No markdown, no backticks, no explanation. Start with [ and end with ].
+Each object must have exactly these fields:
+- "title": a catchy, memorable 2–4 word app name
+- "description": exactly 2 sentences describing what it does and why people would love it
+- "tags": array of exactly 3 short descriptive tags
+
+Every idea must feel tailor-made for these specific answers. Be creative, specific, and avoid generic concepts.`;
+}
+
+const MSGS=['Analyzing your answers…','Brainstorming concepts…','Mixing ideas together…','Almost ready…'];
+let loadInt,loadI=0;
+function startLoading(){
+  loadI=0;document.getElementById('loading-msg').textContent=MSGS[0];
+  loadInt=setInterval(()=>{loadI=(loadI+1)%MSGS.length;document.getElementById('loading-msg').textContent=MSGS[loadI];},1800);
+}
+function stopLoading(){clearInterval(loadInt);}
+
+async function callAPI(prompt, attempt=0){
+  const resp = await fetch('/.netlify/functions/generate', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({prompt})
+  });
+  const data = await resp.json();
+  if(resp.status===429 && attempt<3){
+    document.getElementById('loading-msg').textContent='Rate limited — retrying in 10s...';
+    await new Promise(r=>setTimeout(r,10000));
+    return callAPI(prompt, attempt+1);
+  }
+  if(!resp.ok) throw new Error(data.error||'Server error '+resp.status);
+  if(!data.ideas) throw new Error('No ideas returned');
+  return data.ideas;
+}
+
+async function doGenerate(){
+  showScreen('loading');startLoading();
+  try{
+    const ideas=await callAPI(buildPrompt(false));
+    stopLoading();renderIdeas(ideas);
+  }catch(err){
+    stopLoading();console.error(err);
+    renderIdeas(null,err.message);
+  }
+}
+
+async function refreshIdeas(){
+  const btn=document.getElementById('btn-refresh');
+  btn.disabled=true;
+  showScreen('loading');startLoading();
+  try{
+    const ideas=await callAPI(buildPrompt(true));
+    stopLoading();renderIdeas(ideas);
+  }catch(err){
+    stopLoading();renderIdeas(null,err.message);
+  }finally{btn.disabled=false;}
+}
+
+// ─── RENDER IDEAS ─────────────────────────────────────────────────────────────
+function renderIdeas(ideas,errMsg){
+  showScreen('ideas');
+  document.getElementById('btn-refresh').disabled=false;
+  const picks=answers['app_type']||[];
+  document.getElementById('ideas-sub').textContent=picks.length?`Tailored for: ${picks.join(' + ')}`:'Based on your answers';
+  const list=document.getElementById('ideas-list');
+  list.innerHTML='';
+  if(!ideas||!Array.isArray(ideas)||ideas.length===0){
+    list.innerHTML=`<div style="text-align:center;padding:48px 24px;background:var(--card);border:1px solid var(--border);border-radius:18px;">
+      <div style="font-size:36px;margin-bottom:12px;">⚡</div>
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;">Generation failed</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:20px;">${errMsg?h(errMsg):'Something went wrong.'}</div>
+      <button class="btn-primary" onclick="doGenerate()" style="font-size:14px;padding:12px 24px;">Try Again</button>
+    </div>`;
+    return;
+  }
+  ideas.slice(0,10).forEach((idea,i)=>{
+    const card=document.createElement('div');
+    card.className='idea-card';
+    card.style.animationDelay=(i*0.04)+'s';
+    card.innerHTML=`<div class="idea-num">IDEA ${String(i+1).padStart(2,'0')}</div><div class="idea-title">${h(idea.title||'Untitled')}</div><div class="idea-desc">${h(idea.description||'')}</div><div class="idea-tags">${(idea.tags||[]).map(t=>`<span class="idea-tag">${h(t)}</span>`).join('')}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function h(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
